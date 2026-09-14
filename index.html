@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>زعفران | مخبز</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<!-- Firebase SDK (compat build - simple to use directly in the browser without a build step) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --cream:#FAF3E2;
+    --cream-2:#F3E7CC;
+    --crust:#3A2415;
+    --crust-soft:#5C3A22;
+    --gold:#C8912F;
+    --gold-deep:#A96F1F;
+    --saffron-red:#A83E1E;
+    --maroon:#6E2A2A;
+    --line: rgba(58,36,21,0.16);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--cream);
+    color:var(--crust);
+    font-family:'Tajawal', sans-serif;
+    line-height:1.7;
+    overflow-x:hidden;
+  }
+  h1,h2,h3, .display{
+    font-family:'Aref Ruqaa', serif;
+    font-weight:700;
+  }
+  a{color:inherit; text-decoration:none;}
+  img{max-width:100%; display:block;}
+
+  /* ===== Texture: saffron thread pattern ===== */
+  .thread-field{
+    position:absolute; inset:0; pointer-events:none; opacity:0.16;
+  }
+
+  /* ===== Header ===== */
+  header{
+    position:sticky; top:0; z-index:40;
+    background:rgba(250,243,226,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-wrap{
+    max-width:1180px; margin:0 auto; padding:16px 28px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-mark{width:34px; height:34px;}
+  .brand-name{font-size:1.5rem; color:var(--crust);}
+  nav ul{list-style:none; display:flex; gap:32px;}
+  nav a{
+    font-size:0.98rem; color:var(--crust-soft); position:relative; padding-bottom:4px;
+    transition:color .25s ease;
+  }
+  nav a:hover{color:var(--saffron-red);}
+  .nav-toggle{display:none; background:none; border:none; font-size:1.6rem; color:var(--crust); cursor:pointer;}
+  .admin-link{
+    font-size:0.82rem; color:var(--crust-soft); border:1px solid var(--line);
+    padding:7px 14px; border-radius:20px; cursor:pointer; background:none;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .admin-link:hover{border-color:var(--saffron-red); color:var(--saffron-red);}
+  .admin-badge{
+    display:none; align-items:center; gap:10px; font-size:0.82rem;
+    background:var(--crust); color:var(--cream-2); padding:7px 8px 7px 16px; border-radius:20px;
+  }
+  .admin-badge.active{display:flex;}
+  .admin-badge button{
+    background:var(--saffron-red); color:var(--cream); border:none; border-radius:16px;
+    padding:5px 12px; font-size:0.78rem; cursor:pointer;
+  }
+
+  /* ===== Hero ===== */
+  .hero{
+    position:relative;
+    max-width:1180px; margin:0 auto;
+    padding:76px 28px 96px;
+    display:grid; grid-template-columns:1.05fr 0.95fr; gap:48px; align-items:center;
+  }
+  .hero-eyebrow{
+    color:var(--saffron-red); font-size:0.95rem; margin-bottom:14px; letter-spacing:0.02em;
+  }
+  .hero h1{
+    font-size:clamp(3rem, 6vw, 5.2rem);
+    line-height:1.05;
+    color:var(--crust);
+  }
+  .hero h1 span{color:var(--saffron-red);}
+  .hero p{
+    max-width:46ch; margin-top:22px; font-size:1.08rem; color:var(--crust-soft);
+  }
+  .hero-actions{display:flex; gap:16px; margin-top:34px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:14px 28px; border-radius:2px; font-size:1rem; cursor:pointer;
+    border:1px solid transparent; transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn-solid{background:var(--saffron-red); color:var(--cream);}
+  .btn-solid:hover{transform:translateY(-2px); box-shadow:0 10px 22px rgba(168,62,30,0.28);}
+  .btn-outline{border-color:var(--crust); color:var(--crust);}
+  .btn-outline:hover{background:var(--crust); color:var(--cream);}
+
+  .hero-visual{
+    position:relative; aspect-ratio:4/5; border-radius:4px; overflow:hidden;
+    background:linear-gradient(160deg, var(--gold) 0%, var(--saffron-red) 60%, var(--maroon) 100%);
+  }
+  .hero-visual svg{position:absolute; inset:0; width:100%; height:100%;}
+  .hero-tag{
+    position:absolute; bottom:22px; right:22px; left:22px;
+    background:rgba(58,36,21,0.82); color:var(--cream);
+    padding:16px 20px; border-radius:2px; font-size:0.95rem;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+
+  /* ===== Section shell ===== */
+  section{max-width:1180px; margin:0 auto; padding:88px 28px;}
+  .section-head{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+    margin-bottom:44px; border-bottom:1px solid var(--line); padding-bottom:20px;
+  }
+  .section-head h2{font-size:2.3rem; color:var(--crust);}
+  .section-head p{color:var(--crust-soft); max-width:40ch;}
+
+  /* ===== About ===== */
+  .about{
+    display:grid; grid-template-columns:0.9fr 1.1fr; gap:56px; align-items:center;
+  }
+  .about-figure{
+    aspect-ratio:1/1; border-radius:4px; background:var(--cream-2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .about ul{margin-top:24px; list-style:none; display:grid; gap:14px;}
+  .about li{display:flex; gap:12px; color:var(--crust-soft);}
+  .about li::before{content:"—"; color:var(--saffron-red); flex-shrink:0;}
+
+  /* ===== Products ===== */
+  .products-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:24px;
+  }
+  .card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:3px;
+    overflow:hidden; display:flex; flex-direction:column;
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .card:hover{transform:translateY(-4px); box-shadow:0 16px 30px rgba(58,36,21,0.12);}
+  .card-media{
+    aspect-ratio:4/3; display:flex; align-items:center; justify-content:center;
+    font-size:3rem; color:var(--cream);
+  }
+  .card-body{padding:18px 20px 22px; display:flex; flex-direction:column; gap:8px; flex:1;}
+  .card-body h3{font-size:1.25rem; color:var(--crust);}
+  .card-body p{font-size:0.92rem; color:var(--crust-soft); flex:1;}
+  .card-foot{
+    display:flex; justify-content:space-between; align-items:center; margin-top:6px;
+  }
+  .price{color:var(--saffron-red); font-weight:700; font-size:1.05rem;}
+  .card-badge{
+    font-size:0.75rem; color:var(--crust-soft); border:1px solid var(--line);
+    padding:2px 10px; border-radius:20px;
+  }
+  .card-remove{
+    background:none; border:none; color:var(--crust-soft); cursor:pointer; font-size:0.82rem;
+    text-decoration:underline; align-self:flex-start;
+  }
+  .card-remove:hover{color:var(--saffron-red);}
+
+  .empty-note{
+    grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--crust-soft);
+    border:1px dashed var(--line); border-radius:4px;
+  }
+
+  /* ===== Floating add button ===== */
+  .fab{
+    position:fixed; left:28px; bottom:28px; z-index:50;
+    width:64px; height:64px; border-radius:50%;
+    background:var(--saffron-red); color:var(--cream);
+    display:none; align-items:center; justify-content:center;
+    font-size:2rem; border:none; cursor:pointer;
+    box-shadow:0 14px 28px rgba(168,62,30,0.35);
+    transition:transform .2s ease;
+  }
+  .fab.visible{display:flex;}
+  .fab:hover{transform:scale(1.06) rotate(90deg);}
+  .fab-label{
+    position:fixed; left:104px; bottom:44px; z-index:50;
+    background:var(--crust); color:var(--cream); padding:8px 14px;
+    border-radius:20px; font-size:0.85rem; opacity:0; pointer-events:none;
+    transition:opacity .2s ease;
+    display:none;
+  }
+  .fab-label.visible{display:block;}
+  .fab:hover + .fab-label{opacity:1;}
+
+  /* ===== Modal ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(58,36,21,0.55); z-index:60;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .modal-overlay.open{opacity:1; pointer-events:auto;}
+  .modal{
+    background:var(--cream); width:100%; max-width:480px; border-radius:6px;
+    padding:32px; position:relative; max-height:90vh; overflow-y:auto;
+    transform:translateY(14px); transition:transform .25s ease;
+  }
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal h3{font-size:1.6rem; margin-bottom:6px;}
+  .modal-sub{color:var(--crust-soft); font-size:0.92rem; margin-bottom:24px;}
+  .modal-close{
+    position:absolute; top:18px; left:18px; background:none; border:none;
+    font-size:1.4rem; color:var(--crust-soft); cursor:pointer;
+  }
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-size:0.88rem; color:var(--crust-soft); margin-bottom:6px;}
+  .field input, .field textarea, .field select{
+    width:100%; padding:11px 14px; border:1px solid var(--line); border-radius:2px;
+    background:#fff; font-family:'Tajawal', sans-serif; font-size:0.98rem; color:var(--crust);
+  }
+  .field textarea{resize:vertical; min-height:70px;}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .icon-picker{display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;}
+  .icon-opt{
+    width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; background:var(--cream-2); border:2px solid transparent; cursor:pointer;
+  }
+  .icon-opt.selected{border-color:var(--saffron-red);}
+  .modal .btn-solid{width:100%; justify-content:center; margin-top:6px;}
+  .form-error{color:var(--saffron-red); font-size:0.85rem; margin-top:-8px; margin-bottom:14px; display:none;}
+
+  /* ===== Footer ===== */
+  footer{
+    background:var(--crust); color:var(--cream-2); padding:60px 28px 32px;
+  }
+  .footer-wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:40px;}
+  footer h4{font-family:'Aref Ruqaa', serif; font-size:1.3rem; margin-bottom:14px; color:var(--gold);}
+  footer p, footer li{color:#CBB9A0; font-size:0.92rem;}
+  footer ul{list-style:none; display:grid; gap:10px;}
+  .footer-bottom{
+    max-width:1180px; margin:40px auto 0; padding-top:24px; border-top:1px solid rgba(255,255,255,0.1);
+    display:flex; justify-content:space-between; color:#9C8871; font-size:0.82rem; flex-wrap:wrap; gap:10px;
+  }
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr; padding-top:40px;}
+    .about{grid-template-columns:1fr;}
+    nav ul{
+      position:fixed; top:68px; right:0; left:0; background:var(--cream);
+      flex-direction:column; padding:20px 28px; gap:18px; border-bottom:1px solid var(--line);
+      transform:translateY(-140%); transition:transform .25s ease; z-index:39;
+    }
+    nav ul.open{transform:translateY(0);}
+    .nav-toggle{display:block;}
+    .footer-wrap{grid-template-columns:1fr; gap:28px;}
+    .fab-label{display:none !important;}
+    .admin-link span, .admin-badge span{display:none;}
+    .admin-link, .admin-badge{padding:8px 10px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-wrap">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="19" stroke="#A83E1E" stroke-width="1.4"/>
+        <path d="M20 10c1.5 4 1.5 6-1 8 3-1 5 0 6 3-3-2-5-1-6 2-1-3-3-4-6-2 1-3 3-4 6-3-2.5-2-2.5-4-1-8z" fill="#A83E1E"/>
+      </svg>
+      <span class="brand-name">زعفران</span>
+    </div>
+    <nav>
+      <ul id="navList">
+        <li><a href="#about">قصتنا</a></li>
+        <li><a href="#products">المنتجات</a></li>
+        <li><a href="#visit">زورونا</a></li>
+      </ul>
+    </nav>
+    <button class="admin-link" id="adminLoginBtn">🔒 دخول المدير</button>
+    <div class="admin-badge" id="adminBadge">
+      <span>وضع المدير مفعّل</span>
+      <button id="adminLogoutBtn">خروج</button>
+    </div>
+    <button class="nav-toggle" id="navToggle">☰</button>
+  </div>
+</header>
+
+<section class="hero" style="padding-top:20px;">
+  <div>
+    <div class="hero-eyebrow">مخبز حرفي — خيوط الزعفران، عجين البيت</div>
+    <h1>حلاوة <span>الزعفران</span><br>بين يدي الخباز</h1>
+    <p>نعجن كل صباح بيدين تعرفان الطحين، ونضيف خيوط الزعفران الأصلي إلى الخبز والمعمول والكنافة. كل قطعة تخرج من فرننا الحطبي تحمل رائحة البيت.</p>
+    <div class="hero-actions">
+      <a href="#products" class="btn btn-solid">تصفّح المنتجات</a>
+      <a href="#visit" class="btn btn-outline">موقع المخبز</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#D9A438"/>
+          <stop offset="1" stop-color="#6E2A2A"/>
+        </linearGradient>
+      </defs>
+      <rect width="400" height="500" fill="url(#g1)"/>
+      <g opacity="0.5" stroke="#FAF3E2" stroke-width="2" stroke-linecap="round">
+        <path d="M60 90 Q90 60 70 20"/>
+        <path d="M60 90 Q40 60 20 40"/>
+        <circle cx="60" cy="90" r="4" fill="#FAF3E2" stroke="none"/>
+        <path d="M330 140 Q360 110 345 70"/>
+        <path d="M330 140 Q310 110 290 95"/>
+        <circle cx="330" cy="140" r="4" fill="#FAF3E2" stroke="none"/>
+        <path d="M110 420 Q140 390 125 350"/>
+        <path d="M110 420 Q85 395 65 380"/>
+        <circle cx="110" cy="420" r="4" fill="#FAF3E2" stroke="none"/>
+        <path d="M300 400 Q330 375 315 335"/>
+        <path d="M300 400 Q278 372 258 360"/>
+        <circle cx="300" cy="400" r="4" fill="#FAF3E2" stroke="none"/>
+      </g>
+      <circle cx="200" cy="255" r="90" fill="#FAF3E2" opacity="0.92"/>
+      <g stroke="#A83E1E" stroke-width="3" stroke-linecap="round" opacity="0.8">
+        <path d="M200 255 L200 200"/>
+        <path d="M200 255 L245 225"/>
+        <path d="M200 255 L245 285"/>
+        <path d="M200 255 L200 310"/>
+        <path d="M200 255 L155 285"/>
+        <path d="M200 255 L155 225"/>
+      </g>
+      <circle cx="200" cy="255" r="10" fill="#A83E1E"/>
+    </svg>
+    <div class="hero-tag">
+      <span>خبز اليوم يبدأ من فجر الفرن</span>
+      <span>٦:٠٠ ص</span>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="about">
+    <div class="about-figure">
+      <svg viewBox="0 0 300 300" width="70%">
+        <circle cx="150" cy="150" r="120" fill="#C8912F" opacity="0.25"/>
+        <circle cx="150" cy="150" r="85" fill="#A83E1E" opacity="0.85"/>
+        <path d="M150 90 C170 130 190 140 150 210 C110 140 130 130 150 90Z" fill="#FAF3E2"/>
+      </svg>
+    </div>
+    <div>
+      <div class="hero-eyebrow">قصتنا</div>
+      <h2 style="font-size:2.1rem; margin-bottom:18px;">من دكان صغير إلى مائدة الحي</h2>
+      <p>بدأ مخبز زعفران بفرن طيني واحد وشغف بمزج التوابل الفارسية مع وصفات العائلة الشامية. اليوم ما زلنا نؤمن أن الخبز الجيد يحتاج وقتاً، وأن الزعفران الحقيقي لا يُستبدل.</p>
+      <ul>
+        <li>نُنقع خيوط الزعفران يدوياً قبل كل عجنة بثلاث ساعات</li>
+        <li>القمح محلي، والفرن حطبي كما كان منذ البداية</li>
+        <li>قائمتنا تتغيّر مع المواسم — وأحياناً معكم أنتم</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="products">
+  <div class="section-head">
+    <div>
+      <h2>منتجاتنا</h2>
+      <p>مجموعة مختارة من فرننا، ويمكنكم إضافة الصنف الذي تتخيلونه بأنفسكم.</p>
+    </div>
+    <span style="color:var(--crust-soft); font-size:0.9rem;" id="countLabel"></span>
+  </div>
+  <div class="products-grid" id="productsGrid"></div>
+</section>
+
+<section id="visit" style="padding-top:0;">
+  <div class="section-head" style="border-bottom:none;">
+    <div>
+      <h2>زورونا</h2>
+      <p>ننتظركم كل يوم من التاسعة صباحاً حتى التاسعة مساءً.</p>
+    </div>
+  </div>
+  <div class="hero-actions">
+    <a href="#" class="btn btn-solid">اطلبوا التوصيل</a>
+    <a href="#" class="btn btn-outline">دليل الوصول</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-wrap">
+    <div>
+      <h4>زعفران</h4>
+      <p>مخبز حرفي يقدّم الخبز والحلويات المشرقية بلمسة الزعفران الأصيل، مُعدّة يومياً بأيدٍ خبيرة.</p>
+    </div>
+    <div>
+      <h4>روابط</h4>
+      <ul>
+        <li><a href="#about">قصتنا</a></li>
+        <li><a href="#products">المنتجات</a></li>
+        <li><a href="#visit">زورونا</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>تواصلوا معنا</h4>
+      <ul>
+        <li>الرياض، حي الملقا</li>
+        <li>٩:٠٠ ص — ٩:٠٠ م</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© مخبز زعفران</span>
+    <span>صُنع بحب وقليل من الزعفران</span>
+  </div>
+</footer>
+
+<!-- Admin login modal -->
+<div class="modal-overlay" id="loginOverlay">
+  <div class="modal" style="max-width:380px;">
+    <button class="modal-close" id="loginClose">✕</button>
+    <h3>دخول المدير</h3>
+    <p class="modal-sub">هذه المساحة مخصّصة للمدير فقط لإضافة الأصناف.</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="adminPass">كلمة المرور</label>
+        <input type="password" id="adminPass" placeholder="••••••••" required autocomplete="off" dir="ltr" style="text-align:left;">
+      </div>
+      <p class="form-error" id="loginError">كلمة المرور غير صحيحة.</p>
+      <button type="submit" class="btn btn-solid">دخول</button>
+    </form>
+  </div>
+</div>
+
+<!-- Floating add button (visible to admin only) -->
+<button class="fab" id="fabAdd" aria-label="إضافة صنف">+</button>
+<span class="fab-label">أضف صنفك الخاص</span>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <h3>أضف صنفاً جديداً</h3>
+    <p class="modal-sub">اكتب تفاصيل الصنف الذي تتخيّله، وسيظهر فوراً في قائمة المنتجات.</p>
+    <form id="productForm">
+      <div class="field">
+        <label for="pName">اسم الصنف</label>
+        <input type="text" id="pName" placeholder="مثال: كعك الزعفران باللوز" required>
+      </div>
+      <div class="field">
+        <label for="pDesc">وصف مختصر</label>
+        <textarea id="pDesc" placeholder="مكوّنات أو لمسة مميزة للصنف"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="pPrice">السعر (ر.س)</label>
+          <input type="number" id="pPrice" min="0" step="0.5" placeholder="18" required>
+        </div>
+        <div class="field">
+          <label for="pCategory">التصنيف</label>
+          <select id="pCategory">
+            <option value="خبز">خبز</option>
+            <option value="حلويات">حلويات</option>
+            <option value="معجنات">معجنات</option>
+            <option value="مشروبات">مشروبات</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="pImage">صورة الصنف (اختياري)</label>
+        <input type="file" id="pImage" accept="image/*">
+        <div id="imagePreviewWrap" style="display:none; margin-top:10px;">
+          <img id="imagePreview" style="width:100%; height:140px; object-fit:cover; border-radius:4px; border:1px solid var(--line);">
+        </div>
+      </div>
+      <div class="field">
+        <label>أو اختر أيقونة بدل الصورة</label>
+        <div class="icon-picker" id="iconPicker"></div>
+      </div>
+      <p class="form-error" id="formError">فضلاً اكتب اسماً وسعراً للصنف.</p>
+      <button type="submit" class="btn btn-solid">إضافة الصنف</button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ============================================================
+  // إعداد Firebase — استبدل القيم التالية بالقيم من مشروعك في Firebase
+  // (خطوات الحصول عليها موجودة في رسالة الشرح المرفقة)
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyDDyiDbljwLnbEHYXiUwz3k4NixGyqTcI8",
+    authDomain: "zafaran-bakery.firebaseapp.com",
+    projectId: "zafaran-bakery",
+    storageBucket: "zafaran-bakery.firebasestorage.app",
+    messagingSenderId: "343645506367",
+    appId: "1:343645506367:web:efcd0cde4264b00d4f618a",
+    measurementId: "G-WHYK1EGZKG"
+  };
+  // البريد الذي أنشأت فيه حساب المدير داخل Firebase Authentication
+  const ADMIN_EMAIL = "admin@zafaran-bakery.com";
+
+  const firebaseReady = firebaseConfig.apiKey !== "YOUR_API_KEY";
+  let auth, db;
+  if(firebaseReady){
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+  }
+
+  let isAdmin = false;
+  let pendingImage = null;
+
+  const icons = ["🍞","🥐","🧁","🍰","🥧","🍪","☕","🫖","🥮","🍩"];
+  let selectedIcon = icons[0];
+
+  // هذه الأصناف الأساسية تظهر دائماً للجميع (مكتوبة بالكود مباشرة)
+  const seedProducts = [
+    {name:"خبز الزعفران", desc:"رغيف طري معجون بخيوط الزعفران المنقوعة وحبة البركة.", price:14, category:"خبز", icon:"🍞"},
+    {name:"معمول الزعفران بالتمر", desc:"عجينة سميد مقرمشة تخفي حشوة تمر بلمسة زعفران.", price:22, category:"حلويات", icon:"🥮"},
+    {name:"كرواسان الزعفران والعسل", desc:"طبقات زبدة رقيقة مع صبغة زعفران خفيفة وقطرات عسل.", price:16, category:"معجنات", icon:"🥐"},
+    {name:"شاي الزعفران والهيل", desc:"مزيج دافئ من الزعفران والهيل يُقدَّم مع كل طلب.", price:12, category:"مشروبات", icon:"🫖"},
+    {name:"كنافة الزعفران بالقشطة", desc:"شعيرية مقرمشة، قشطة طازجة، وقطر مُعطّر بالزعفران.", price:26, category:"حلويات", icon:"🍰"},
+  ];
+
+  // الأصناف اللي يضيفها المدير وتُحفظ فعلياً بقاعدة البيانات (Firestore)
+  let customProducts = [];
+
+  function allProducts(){
+    return customProducts.concat(seedProducts);
+  }
+
+  function listenToProducts(){
+    if(!firebaseReady){
+      // بدون إعداد Firebase بعد: نعرض فقط الأصناف الأساسية، والحفظ الدائم غير مفعّل
+      render();
+      return;
+    }
+    db.collection('products').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+      customProducts = snapshot.docs.map(doc => Object.assign({id: doc.id, custom: true}, doc.data()));
+      render();
+    }, (err) => {
+      console.error('تعذّر تحميل الأصناف من قاعدة البيانات:', err);
+      render();
+    });
+  }
+
+  function addProductToDb(data){
+    if(!firebaseReady){
+      alert('لم يتم ربط قاعدة البيانات بعد، لذلك لن يُحفظ هذا الصنف بشكل دائم.');
+      return;
+    }
+    db.collection('products').add(Object.assign({}, data, {
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    })).catch(err => {
+      console.error('فشل حفظ الصنف:', err);
+      alert('حدث خطأ أثناء حفظ الصنف، حاول مرة أخرى.');
+    });
+  }
+
+  function removeProductFromDb(id){
+    if(!firebaseReady) return;
+    db.collection('products').doc(id).delete().catch(err => {
+      console.error('فشل حذف الصنف:', err);
+    });
+  }
+
+  const grid = document.getElementById('productsGrid');
+  const countLabel = document.getElementById('countLabel');
+
+  function render(){
+    const products = allProducts();
+    grid.innerHTML = "";
+    if(products.length === 0){
+      grid.innerHTML = '<div class="empty-note">لا توجد أصناف بعد. اضغط زر "+" لإضافة أول صنف.</div>';
+      countLabel.textContent = "";
+      return;
+    }
+    countLabel.textContent = products.length + " صنفاً";
+    products.forEach((p) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-media" style="${p.image ? '' : 'background:linear-gradient(145deg, var(--gold), var(--saffron-red));'}">${p.image ? '<img src="'+p.image+'" style="width:100%;height:100%;object-fit:cover;">' : p.icon}</div>
+        <div class="card-body">
+          <h3>${escapeHtml(p.name)}</h3>
+          <p>${escapeHtml(p.desc || "")}</p>
+          <div class="card-foot">
+            <span class="price">${p.price} ر.س</span>
+            <span class="card-badge">${escapeHtml(p.category)}</span>
+          </div>
+          ${(isAdmin && p.custom) ? '<button class="card-remove" data-id="'+p.id+'">إزالة</button>' : ''}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    grid.querySelectorAll('.card-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        removeProductFromDb(btn.getAttribute('data-id'));
+      });
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // image upload — resize/compress before storing so it stays well under Firestore's size limit
+  const pImage = document.getElementById('pImage');
+  const imagePreviewWrap = document.getElementById('imagePreviewWrap');
+  const imagePreview = document.getElementById('imagePreview');
+
+  function resizeImage(file, maxDim, quality){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.onerror = reject;
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * (maxDim / w)); w = maxDim; }
+        else if(h > maxDim){ w = Math.round(w * (maxDim / h)); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  pImage.addEventListener('change', () => {
+    const file = pImage.files[0];
+    if(!file) return;
+    resizeImage(file, 800, 0.72).then((dataUrl) => {
+      pendingImage = dataUrl;
+      imagePreview.src = pendingImage;
+      imagePreviewWrap.style.display = 'block';
+    }).catch(() => {
+      formError.textContent = 'تعذّرت معالجة الصورة، جرّب صورة أخرى.';
+      formError.style.display = 'block';
+    });
+  });
+
+  // icon picker
+  const iconPicker = document.getElementById('iconPicker');
+  icons.forEach((ic, i) => {
+    const el = document.createElement('div');
+    el.className = 'icon-opt' + (i === 0 ? ' selected' : '');
+    el.textContent = ic;
+    el.addEventListener('click', () => {
+      selectedIcon = ic;
+      document.querySelectorAll('.icon-opt').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+    });
+    iconPicker.appendChild(el);
+  });
+
+  // ===== Admin authentication (Firebase Auth) =====
+  const fabAdd = document.getElementById('fabAdd');
+  const fabLabel = document.querySelector('.fab-label');
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  const adminBadge = document.getElementById('adminBadge');
+  const loginOverlay = document.getElementById('loginOverlay');
+  const loginClose = document.getElementById('loginClose');
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+
+  function setAdminMode(on){
+    isAdmin = on;
+    fabAdd.classList.toggle('visible', isAdmin);
+    fabLabel.classList.toggle('visible', isAdmin);
+    adminBadge.classList.toggle('active', isAdmin);
+    adminLoginBtn.style.display = isAdmin ? 'none' : 'flex';
+    render();
+  }
+
+  adminLoginBtn.addEventListener('click', () => {
+    loginError.style.display = 'none';
+    document.getElementById('adminPass').value = '';
+    loginOverlay.classList.add('open');
+  });
+  loginClose.addEventListener('click', () => loginOverlay.classList.remove('open'));
+  loginOverlay.addEventListener('click', (e) => { if(e.target === loginOverlay) loginOverlay.classList.remove('open'); });
+
+  loginForm.addEventListener('submit', handleLoginSubmit);
+  loginForm.querySelector('button[type="submit"]').addEventListener('click', function(e){
+    e.preventDefault();
+    handleLoginSubmit(e);
+  });
+
+  function handleLoginSubmit(e){
+    if(e && e.preventDefault) e.preventDefault();
+    if(!firebaseReady){
+      loginError.textContent = 'لم يتم ربط قاعدة البيانات بعد — راجع خطوات الإعداد.';
+      loginError.style.display = 'block';
+      return;
+    }
+    loginError.textContent = 'جارٍ التحقق...';
+    loginError.style.display = 'block';
+    const raw = document.getElementById('adminPass').value;
+    // strip invisible bidi/direction marks that RTL keyboards can insert
+    const val = raw.replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069]/g, '').trim();
+    auth.signInWithEmailAndPassword(ADMIN_EMAIL, val).then(() => {
+      loginOverlay.classList.remove('open');
+    }).catch((err) => {
+      loginError.textContent = 'خطأ: ' + err.code + ' — ' + err.message;
+      loginError.style.display = 'block';
+    });
+  }
+
+  document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+    if(firebaseReady) auth.signOut(); else setAdminMode(false);
+  });
+
+  if(firebaseReady){
+    auth.onAuthStateChanged((user) => {
+      setAdminMode(!!user && user.email === ADMIN_EMAIL);
+    });
+  }
+
+  // modal open/close
+  const overlay = document.getElementById('modalOverlay');
+  fabAdd.addEventListener('click', () => { if(isAdmin) overlay.classList.add('open'); });
+  document.getElementById('modalClose').addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('open'); });
+
+  // form submit
+  const form = document.getElementById('productForm');
+  const formError = document.getElementById('formError');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('pName').value.trim();
+    const price = parseFloat(document.getElementById('pPrice').value);
+    if(!name || isNaN(price)){
+      formError.style.display = 'block';
+      return;
+    }
+    formError.style.display = 'none';
+    addProductToDb({
+      name,
+      desc: document.getElementById('pDesc').value.trim(),
+      price,
+      category: document.getElementById('pCategory').value,
+      icon: selectedIcon,
+      image: pendingImage
+    });
+    form.reset();
+    document.querySelectorAll('.icon-opt').forEach((o,i) => o.classList.toggle('selected', i===0));
+    selectedIcon = icons[0];
+    pendingImage = null;
+    imagePreviewWrap.style.display = 'none';
+    overlay.classList.remove('open');
+  });
+
+  // mobile nav
+  const navToggle = document.getElementById('navToggle');
+  const navList = document.getElementById('navList');
+  navToggle.addEventListener('click', () => navList.classList.toggle('open'));
+  navList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navList.classList.remove('open')));
+
+  listenToProducts();
+})();
+</script>
+
+</body>
+  </html>
