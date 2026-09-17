@@ -14,15 +14,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
-    --cream:#FAF3E2;
-    --cream-2:#F3E7CC;
-    --crust:#3A2415;
-    --crust-soft:#5C3A22;
-    --gold:#C8912F;
-    --gold-deep:#A96F1F;
-    --saffron-red:#A83E1E;
-    --maroon:#6E2A2A;
-    --line: rgba(58,36,21,0.16);
+    --cream:#FAF3E2; --cream-2:#F3E7CC; --crust:#3A2415; --crust-soft:#5C3A22;
+    --gold:#C8912F; --gold-deep:#A96F1F; --saffron-red:#A83E1E; --maroon:#6E2A2A; --line: rgba(58,36,21,0.16);
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
@@ -85,6 +78,9 @@
   .admin-card-actions{display:flex; gap:14px; margin-top:8px;}
   .card-edit{background:none; border:none; color:var(--gold-deep); cursor:pointer; font-size:0.82rem; text-decoration:underline;}
   .card-edit:hover{color:var(--saffron-red);}
+  .content-edit-btn{display:none; margin-top:12px; background:none; border:1px solid var(--line); color:var(--crust-soft); padding:6px 16px; border-radius:16px; font-size:0.8rem; cursor:pointer;}
+  .content-edit-btn.visible{display:inline-flex; align-items:center; gap:6px;}
+  .content-edit-btn:hover{border-color:var(--saffron-red); color:var(--saffron-red);}
   .empty-note{grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--crust-soft); border:1px dashed var(--line); border-radius:4px;}
   .fab{position:fixed; left:28px; bottom:28px; z-index:50; width:64px; height:64px; border-radius:50%; background:var(--saffron-red); color:var(--cream); display:none; align-items:center; justify-content:center; font-size:2rem; border:none; cursor:pointer; box-shadow:0 14px 28px rgba(168,62,30,0.35); transition:transform .2s ease;}
   .fab.visible{display:flex;}
@@ -159,7 +155,8 @@
   <div>
     <div class="hero-eyebrow">مخبز حرفي — خيوط الزعفران، عجين البيت</div>
     <h1>حلاوة <span>الزعفران</span><br>بين يدي الخباز</h1>
-    <p>نعجن كل صباح بيدين تعرفان الطحين، ونضيف خيوط الزعفران الأصلي إلى الخبز والمعمول والكنافة. كل قطعة تخرج من فرننا الحطبي تحمل رائحة البيت.</p>
+    <p id="heroParagraph">نعجن كل صباح بيدين تعرفان الطحين، ونضيف خيوط الزعفران الأصلي إلى الخبز والمعمول والكنافة. كل قطعة تخرج من فرننا الحطبي تحمل رائحة البيت.</p>
+    <button class="content-edit-btn" data-field="hero">✏️ تعديل النص</button>
     <div class="hero-actions">
       <a href="#products" class="btn btn-solid">تصفّح المنتجات</a>
       <a href="#visit" class="btn btn-outline">موقع المخبز</a>
@@ -218,7 +215,8 @@
     <div>
       <div class="hero-eyebrow">قصتنا</div>
       <h2 style="font-size:2.1rem; margin-bottom:18px;">من دكان صغير إلى مائدة الحي</h2>
-      <p>بدأ مخبز زعفران بفرن طيني واحد وشغف بمزج التوابل الفارسية مع وصفات العائلة الشامية. اليوم ما زلنا نؤمن أن الخبز الجيد يحتاج وقتاً، وأن الزعفران الحقيقي لا يُستبدل.</p>
+      <p id="aboutParagraph">بدأ مخبز زعفران بفرن طيني واحد وشغف بمزج التوابل الفارسية مع وصفات العائلة الشامية. اليوم ما زلنا نؤمن أن الخبز الجيد يحتاج وقتاً، وأن الزعفران الحقيقي لا يُستبدل.</p>
+      <button class="content-edit-btn" data-field="about">✏️ تعديل النص</button>
       <ul>
         <li>نُنقع خيوط الزعفران يدوياً قبل كل عجنة بثلاث ساعات</li>
         <li>القمح محلي، والفرن حطبي كما كان منذ البداية</li>
@@ -243,7 +241,8 @@
   <div class="section-head" style="border-bottom:none;">
     <div>
       <h2>زورونا</h2>
-      <p>ننتظركم كل يوم من التاسعة صباحاً حتى التاسعة مساءً.</p>
+      <p id="visitParagraph">ننتظركم كل يوم من التاسعة صباحاً حتى التاسعة مساءً.</p>
+      <button class="content-edit-btn" data-field="visit">✏️ تعديل النص</button>
     </div>
   </div>
   <div class="hero-actions">
@@ -345,6 +344,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="contentModalOverlay">
+  <div class="modal" style="max-width:480px;">
+    <button class="modal-close" id="contentModalClose">✕</button>
+    <h3>تعديل النص</h3>
+    <p class="modal-sub">عدّل النص كما تحب، والتعديل يظهر فورًا على الموقع.</p>
+    <div class="field">
+      <textarea id="contentTextarea" style="min-height:150px;"></textarea>
+    </div>
+    <button class="btn btn-solid" id="contentSaveBtn">حفظ</button>
+  </div>
+</div>
+
 <script>
 (function(){
   const firebaseConfig = {
@@ -385,6 +396,34 @@
 
   let products = [];
   let seedAttempted = false;
+
+  const defaultSiteContent = {
+    hero: "نعجن كل صباح بيدين تعرفان الطحين، ونضيف خيوط الزعفران الأصلي إلى الخبز والمعمول والكنافة. كل قطعة تخرج من فرننا الحطبي تحمل رائحة البيت.",
+    about: "بدأ مخبز زعفران بفرن طيني واحد وشغف بمزج التوابل الفارسية مع وصفات العائلة الشامية. اليوم ما زلنا نؤمن أن الخبز الجيد يحتاج وقتاً، وأن الزعفران الحقيقي لا يُستبدل.",
+    visit: "ننتظركم كل يوم من التاسعة صباحاً حتى التاسعة مساءً."
+  };
+  let siteContent = {};
+  let editingContentField = null;
+
+  function applySiteContent(){
+    document.getElementById('heroParagraph').textContent = siteContent.hero || defaultSiteContent.hero;
+    document.getElementById('aboutParagraph').textContent = siteContent.about || defaultSiteContent.about;
+    document.getElementById('visitParagraph').textContent = siteContent.visit || defaultSiteContent.visit;
+  }
+
+  function listenToSiteContent(){
+    if(!firebaseReady){
+      applySiteContent();
+      return;
+    }
+    db.collection('siteContent').doc('main').onSnapshot((doc) => {
+      siteContent = doc.exists ? doc.data() : {};
+      applySiteContent();
+    }, (err) => {
+      console.error('تعذّر تحميل محتوى الموقع:', err);
+      applySiteContent();
+    });
+  }
 
   function allProducts(){
     return products;
@@ -569,6 +608,7 @@
     fabLabel.classList.toggle('visible', isAdmin);
     adminBadge.classList.toggle('active', isAdmin);
     adminLoginBtn.style.display = isAdmin ? 'none' : 'flex';
+    document.querySelectorAll('.content-edit-btn').forEach(btn => btn.classList.toggle('visible', isAdmin));
     render();
   }
 
@@ -690,9 +730,42 @@
   navToggle.addEventListener('click', () => navList.classList.toggle('open'));
   navList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navList.classList.remove('open')));
 
+  const contentModalOverlay = document.getElementById('contentModalOverlay');
+  const contentTextarea = document.getElementById('contentTextarea');
+  const contentSaveBtn = document.getElementById('contentSaveBtn');
+
+  document.querySelectorAll('.content-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(!isAdmin) return;
+      const field = btn.getAttribute('data-field');
+      editingContentField = field;
+      contentTextarea.value = siteContent[field] || defaultSiteContent[field] || '';
+      contentModalOverlay.classList.add('open');
+    });
+  });
+
+  document.getElementById('contentModalClose').addEventListener('click', () => contentModalOverlay.classList.remove('open'));
+  contentModalOverlay.addEventListener('click', (e) => { if(e.target === contentModalOverlay) contentModalOverlay.classList.remove('open'); });
+
+  contentSaveBtn.addEventListener('click', () => {
+    if(!editingContentField) return;
+    if(!firebaseReady){
+      alert('لم يتم ربط قاعدة البيانات بعد، لذلك لن يُحفظ هذا التعديل بشكل دائم.');
+      return;
+    }
+    const val = contentTextarea.value.trim();
+    db.collection('siteContent').doc('main').set({ [editingContentField]: val }, { merge: true }).catch(err => {
+      console.error('فشل حفظ النص:', err);
+      alert('حدث خطأ أثناء حفظ النص، حاول مرة أخرى.');
+    });
+    editingContentField = null;
+    contentModalOverlay.classList.remove('open');
+  });
+
   listenToProducts();
+  listenToSiteContent();
 })();
 </script>
 
 </body>
-</html>
+  </html>
