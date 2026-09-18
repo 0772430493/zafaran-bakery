@@ -13,10 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
-  :root{
-    --cream:#FAF3E2; --cream-2:#F3E7CC; --crust:#3A2415; --crust-soft:#5C3A22;
-    --gold:#C8912F; --gold-deep:#A96F1F; --saffron-red:#A83E1E; --maroon:#6E2A2A; --line: rgba(58,36,21,0.16);
-  }
+  :root{--cream:#FAF3E2;--cream-2:#F3E7CC;--crust:#3A2415;--crust-soft:#5C3A22;--gold:#C8912F;--gold-deep:#A96F1F;--saffron-red:#A83E1E;--maroon:#6E2A2A;--line:rgba(58,36,21,0.16);}
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{background:var(--cream); color:var(--crust); font-family:'Tajawal', sans-serif; line-height:1.7; overflow-x:hidden;}
@@ -154,7 +151,8 @@
 <section class="hero" style="padding-top:20px;">
   <div>
     <div class="hero-eyebrow">مخبز حرفي — خيوط الزعفران، عجين البيت</div>
-    <h1>حلاوة <span>الزعفران</span><br>بين يدي الخباز</h1>
+    <h1 id="heroTitle">حلاوة <span>الزعفران</span><br>بين يدي الخباز</h1>
+    <button class="content-edit-btn" data-field="heroTitle">✏️ تعديل العنوان</button>
     <p id="heroParagraph">نعجن كل صباح بيدين تعرفان الطحين، ونضيف خيوط الزعفران الأصلي إلى الخبز والمعمول والكنافة. كل قطعة تخرج من فرننا الحطبي تحمل رائحة البيت.</p>
     <button class="content-edit-btn" data-field="hero">✏️ تعديل النص</button>
     <div class="hero-actions">
@@ -163,6 +161,7 @@
     </div>
   </div>
   <div class="hero-visual">
+    <img id="heroCustomImage" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1;" alt="">
     <svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
@@ -200,6 +199,8 @@
       <span>خبز اليوم يبدأ من فجر الفرن</span>
       <span>٦:٠٠ ص</span>
     </div>
+    <input type="file" id="heroImageInput" accept="image/*" style="display:none;">
+    <button class="content-edit-btn" id="heroImageEditBtn" style="position:absolute; top:14px; left:14px; z-index:6; background:rgba(250,243,226,0.92);">🖼️ تغيير الصورة</button>
   </div>
 </section>
 
@@ -276,6 +277,11 @@
   <div class="footer-bottom">
     <span>© مخبز زعفران</span>
     <span>صُنع بحب وقليل من الزعفران</span>
+  </div>
+  <div style="max-width:1180px; margin:14px auto 0; text-align:center; font-size:0.78rem; color:#9C8871;">
+    <a href="https://wa.me/962772430493?text=مرحباً، شفت موقع مخبز زعفران وحابب أطلب موقع مشابه لمشروعي" target="_blank" rel="noopener" style="text-decoration:underline;">
+      🌐 صُمم هذا الموقع خصيصًا — لطلب موقع مشابه تواصل واتساب: 0772430493
+    </a>
   </div>
 </footer>
 
@@ -398,6 +404,7 @@
   let seedAttempted = false;
 
   const defaultSiteContent = {
+    heroTitle: "حلاوة الزعفران\nبين يدي الخباز",
     hero: "نعجن كل صباح بيدين تعرفان الطحين، ونضيف خيوط الزعفران الأصلي إلى الخبز والمعمول والكنافة. كل قطعة تخرج من فرننا الحطبي تحمل رائحة البيت.",
     about: "بدأ مخبز زعفران بفرن طيني واحد وشغف بمزج التوابل الفارسية مع وصفات العائلة الشامية. اليوم ما زلنا نؤمن أن الخبز الجيد يحتاج وقتاً، وأن الزعفران الحقيقي لا يُستبدل.",
     visit: "ننتظركم كل يوم من التاسعة صباحاً حتى التاسعة مساءً."
@@ -406,9 +413,21 @@
   let editingContentField = null;
 
   function applySiteContent(){
+    const titleText = siteContent.heroTitle || defaultSiteContent.heroTitle;
+    document.getElementById('heroTitle').innerHTML = escapeHtml(titleText).replace(/\n/g, '<br>');
     document.getElementById('heroParagraph').textContent = siteContent.hero || defaultSiteContent.hero;
     document.getElementById('aboutParagraph').textContent = siteContent.about || defaultSiteContent.about;
     document.getElementById('visitParagraph').textContent = siteContent.visit || defaultSiteContent.visit;
+    const heroImg = document.getElementById('heroCustomImage');
+    const heroSvg = document.querySelector('.hero-visual svg');
+    if(siteContent.heroImage){
+      heroImg.src = siteContent.heroImage;
+      heroImg.style.display = 'block';
+      if(heroSvg) heroSvg.style.display = 'none';
+    } else {
+      heroImg.style.display = 'none';
+      if(heroSvg) heroSvg.style.display = 'block';
+    }
   }
 
   function listenToSiteContent(){
@@ -580,6 +599,29 @@
     });
   });
 
+  const heroImageEditBtn = document.getElementById('heroImageEditBtn');
+  const heroImageInput = document.getElementById('heroImageInput');
+  heroImageEditBtn.addEventListener('click', () => {
+    if(!isAdmin) return;
+    heroImageInput.click();
+  });
+  heroImageInput.addEventListener('change', () => {
+    const file = heroImageInput.files[0];
+    if(!file) return;
+    resizeImage(file, 900, 0.75).then((dataUrl) => {
+      if(!firebaseReady){
+        alert('لم يتم ربط قاعدة البيانات بعد، لذلك لن تُحفظ الصورة بشكل دائم.');
+        return;
+      }
+      db.collection('siteContent').doc('main').set({ heroImage: dataUrl }, { merge: true }).catch(err => {
+        console.error('فشل حفظ صورة الغلاف:', err);
+        alert('حدث خطأ أثناء حفظ الصورة، حاول مرة أخرى.');
+      });
+    }).catch(() => {
+      alert('تعذّرت معالجة الصورة، جرّب صورة أخرى.');
+    });
+  });
+
   const iconPicker = document.getElementById('iconPicker');
   icons.forEach((ic, i) => {
     const el = document.createElement('div');
@@ -734,7 +776,7 @@
   const contentTextarea = document.getElementById('contentTextarea');
   const contentSaveBtn = document.getElementById('contentSaveBtn');
 
-  document.querySelectorAll('.content-edit-btn').forEach(btn => {
+  document.querySelectorAll('.content-edit-btn[data-field]').forEach(btn => {
     btn.addEventListener('click', () => {
       if(!isAdmin) return;
       const field = btn.getAttribute('data-field');
