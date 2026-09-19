@@ -20,7 +20,6 @@
   h1,h2,h3, .display{font-family:'Aref Ruqaa', serif; font-weight:700;}
   a{color:inherit; text-decoration:none;}
   img{max-width:100%; display:block;}
-  .thread-field{position:absolute; inset:0; pointer-events:none; opacity:0.16;}
   header{position:sticky; top:0; z-index:40; background:rgba(250,243,226,0.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--line);}
   .nav-wrap{max-width:1180px; margin:0 auto; padding:16px 28px; display:flex; align-items:center; justify-content:space-between;}
   .brand{display:flex; align-items:center; gap:10px;}
@@ -70,8 +69,21 @@
   .card-badge{font-size:0.75rem; color:var(--crust-soft); border:1px solid var(--line); padding:2px 10px; border-radius:20px;}
   .card-remove{background:none; border:none; color:var(--crust-soft); cursor:pointer; font-size:0.82rem; text-decoration:underline; align-self:flex-start;}
   .card-remove:hover{color:var(--saffron-red);}
-  .btn-whatsapp{display:block; text-align:center; margin-top:10px; padding:9px 14px; background:#25D366; color:#fff; border-radius:20px; font-size:0.85rem; font-weight:700;}
-  .btn-whatsapp:hover{opacity:0.9;}
+  .btn-addcart{display:block; width:100%; text-align:center; margin-top:10px; padding:9px 14px; background:var(--maroon); color:var(--cream); border:none; border-radius:20px; font-size:0.85rem; font-weight:700; cursor:pointer;}
+  .btn-addcart:hover{opacity:0.88;}
+  .cart-fab{position:fixed; right:28px; bottom:28px; z-index:50; width:60px; height:60px; border-radius:50%; background:var(--maroon); color:var(--cream); border:none; cursor:pointer; font-size:1.6rem; display:flex; align-items:center; justify-content:center; box-shadow:0 14px 28px rgba(110,42,42,0.35);}
+  .cart-badge{position:absolute; top:-4px; left:-4px; background:var(--saffron-red); color:#fff; font-size:0.7rem; font-weight:700; min-width:20px; height:20px; border-radius:10px; display:flex; align-items:center; justify-content:center; padding:0 4px;}
+  .cart-checkout-btn{background:var(--maroon) !important;}
+  .cart-item{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line);}
+  .cart-item-media{width:48px; height:48px; border-radius:6px; background:var(--cream-2); display:flex; align-items:center; justify-content:center; font-size:1.3rem; overflow:hidden; flex-shrink:0;}
+  .cart-item-media img{width:100%; height:100%; object-fit:cover;}
+  .cart-item-info{flex:1;}
+  .cart-item-name{font-size:0.94rem; color:var(--crust); font-weight:700;}
+  .cart-item-price{font-size:0.8rem; color:var(--maroon); margin-top:2px;}
+  .cart-qty{display:flex; align-items:center; gap:8px;}
+  .cart-qty button{width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:var(--cream-2); color:var(--crust); cursor:pointer; font-size:1rem;}
+  .cart-item-remove{background:none; border:none; color:var(--crust-soft); font-size:0.78rem; text-decoration:underline; cursor:pointer;}
+  .cart-total-row{display:flex; justify-content:space-between; font-weight:700; color:var(--maroon); padding:14px 0; border-top:1px solid var(--line); margin-top:6px; font-size:1.05rem;}
   .admin-card-actions{display:flex; gap:14px; margin-top:8px;}
   .card-edit{background:none; border:none; color:var(--gold-deep); cursor:pointer; font-size:0.82rem; text-decoration:underline;}
   .card-edit:hover{color:var(--saffron-red);}
@@ -304,6 +316,11 @@
 <button class="fab" id="fabAdd" aria-label="إضافة صنف">+</button>
 <span class="fab-label">أضف صنفك الخاص</span>
 
+<button class="cart-fab" id="cartFab" aria-label="سلة المشتريات">
+  🛒
+  <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+</button>
+
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <button class="modal-close" id="modalClose">✕</button>
@@ -347,6 +364,21 @@
       <p class="form-error" id="formError">فضلاً اكتب اسماً وسعراً للصنف.</p>
       <button type="submit" class="btn btn-solid" id="modalSubmitBtn">إضافة الصنف</button>
     </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cartModalOverlay">
+  <div class="modal" style="max-width:480px;">
+    <button class="modal-close" id="cartModalClose">✕</button>
+    <h3>سلة المشتريات</h3>
+    <p class="modal-sub">راجع طلبك، وأرسله مباشرة عبر واتساب.</p>
+    <div id="cartItemsList"></div>
+    <div id="cartEmptyNote" style="display:none; text-align:center; color:var(--crust-soft); padding:20px 0;">السلة فارغة، أضف صنفاً من قائمة المنتجات.</div>
+    <div class="cart-total-row" id="cartTotalRow" style="display:none;">
+      <span>المجموع</span>
+      <span id="cartTotalAmount">0 ر.س</span>
+    </div>
+    <a class="btn btn-solid cart-checkout-btn" id="cartCheckoutBtn" target="_blank" rel="noopener" style="display:none;">إرسال الطلب عبر واتساب 💬</a>
   </div>
 </div>
 
@@ -448,11 +480,6 @@
     return products;
   }
 
-  function waLink(p){
-    const msg = encodeURIComponent(`مرحباً، أرغب بطلب: ${p.name} - ${p.price} ر.س`);
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
-  }
-
   function seedDefaultProductsIfEmpty(){
     if(seedAttempted || !firebaseReady) return;
     seedAttempted = true;
@@ -534,11 +561,19 @@
             <span class="price">${p.price} ر.س</span>
             <span class="card-badge">${escapeHtml(p.category)}</span>
           </div>
-          <a class="btn-whatsapp" target="_blank" rel="noopener" href="${waLink(p)}">اطلب عبر واتساب 💬</a>
+          <button class="btn-addcart" data-id="${p.id}">🛒 أضف للسلة</button>
           ${isAdmin ? '<div class="admin-card-actions"><button class="card-edit" data-id="'+p.id+'">تعديل</button><button class="card-remove" data-id="'+p.id+'">إزالة</button></div>' : ''}
         </div>
       `;
       grid.appendChild(card);
+    });
+
+    grid.querySelectorAll('.btn-addcart').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const product = products.find(item => item.id === id);
+        if(product) addToCart(product);
+      });
     });
 
     grid.querySelectorAll('.card-remove').forEach(btn => {
@@ -771,6 +806,104 @@
   const navList = document.getElementById('navList');
   navToggle.addEventListener('click', () => navList.classList.toggle('open'));
   navList.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navList.classList.remove('open')));
+
+  let cart = [];
+
+  function updateCartBadge(){
+    const badge = document.getElementById('cartBadge');
+    const count = cart.reduce((sum, item) => sum + item.qty, 0);
+    if(count > 0){
+      badge.textContent = count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function addToCart(product){
+    const existing = cart.find(item => item.id === product.id);
+    if(existing){
+      existing.qty += 1;
+    } else {
+      cart.push({ id: product.id, name: product.name, price: product.price, qty: 1, image: product.image, icon: product.icon });
+    }
+    updateCartBadge();
+    renderCart();
+  }
+
+  function renderCart(){
+    const list = document.getElementById('cartItemsList');
+    const emptyNote = document.getElementById('cartEmptyNote');
+    const totalRow = document.getElementById('cartTotalRow');
+    const checkoutBtn = document.getElementById('cartCheckoutBtn');
+    list.innerHTML = '';
+
+    if(cart.length === 0){
+      emptyNote.style.display = 'block';
+      totalRow.style.display = 'none';
+      checkoutBtn.style.display = 'none';
+      return;
+    }
+
+    emptyNote.style.display = 'none';
+    totalRow.style.display = 'flex';
+    checkoutBtn.style.display = 'flex';
+
+    let total = 0;
+    cart.forEach(item => {
+      total += item.price * item.qty;
+      const row = document.createElement('div');
+      row.className = 'cart-item';
+      row.innerHTML = `
+        <div class="cart-item-media">${item.image ? '<img src="'+item.image+'">' : (item.icon || '🍽️')}</div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${escapeHtml(item.name)}</div>
+          <div class="cart-item-price">${item.price} ر.س × ${item.qty}</div>
+        </div>
+        <div class="cart-qty">
+          <button class="cart-dec" data-id="${item.id}">−</button>
+          <span>${item.qty}</span>
+          <button class="cart-inc" data-id="${item.id}">+</button>
+        </div>
+        <button class="cart-item-remove" data-id="${item.id}">حذف</button>
+      `;
+      list.appendChild(row);
+    });
+
+    document.getElementById('cartTotalAmount').textContent = total + ' ر.س';
+
+    list.querySelectorAll('.cart-inc').forEach(btn => btn.addEventListener('click', () => {
+      const item = cart.find(i => i.id === btn.getAttribute('data-id'));
+      if(item){ item.qty += 1; updateCartBadge(); renderCart(); }
+    }));
+    list.querySelectorAll('.cart-dec').forEach(btn => btn.addEventListener('click', () => {
+      const item = cart.find(i => i.id === btn.getAttribute('data-id'));
+      if(item){
+        item.qty -= 1;
+        if(item.qty <= 0){ cart = cart.filter(i => i.id !== item.id); }
+        updateCartBadge();
+        renderCart();
+      }
+    }));
+    list.querySelectorAll('.cart-item-remove').forEach(btn => btn.addEventListener('click', () => {
+      cart = cart.filter(i => i.id !== btn.getAttribute('data-id'));
+      updateCartBadge();
+      renderCart();
+    }));
+
+    const lines = cart.map(item => `- ${item.name} × ${item.qty} = ${item.price * item.qty} ر.س`);
+    const msg = 'مرحباً، أرغب بطلب:\n' + lines.join('\n') + `\nالمجموع: ${total} ر.س`;
+    checkoutBtn.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  }
+
+  const cartFab = document.getElementById('cartFab');
+  const cartModalOverlay = document.getElementById('cartModalOverlay');
+  cartFab.addEventListener('click', () => {
+    renderCart();
+    cartModalOverlay.classList.add('open');
+  });
+  document.getElementById('cartModalClose').addEventListener('click', () => cartModalOverlay.classList.remove('open'));
+  cartModalOverlay.addEventListener('click', (e) => { if(e.target === cartModalOverlay) cartModalOverlay.classList.remove('open'); });
 
   const contentModalOverlay = document.getElementById('contentModalOverlay');
   const contentTextarea = document.getElementById('contentTextarea');
